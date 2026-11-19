@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TaskFlow Lite - A lightweight, distraction-free task management application.">
+  <title>TaskFlow Lite</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-titles">
+          <h1 class="app-title">TaskFlow Lite</h1>
+          <p class="subtitle">Organize your day, one task at a time.</p>
+        </div>
+        <div class="task-summary" aria-label="Task Summary">
+          <span id="taskCountBadge" class="count-badge">0 tasks</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Notification Banner -->
+    <div id="notificationBanner" class="notification-banner hidden" role="status" aria-live="polite">
+      <span id="notificationMessage" class="notification-message"></span>
+      <button type="button" id="notificationCloseBtn" class="notification-close" aria-label="Close message">&times;</button>
+    </div>
+
+    <!-- Main Container -->
+    <main class="app-container">
+      <!-- Task Creation Section -->
+      <section class="card form-section" aria-labelledby="createTaskHeading">
+        <h2 id="createTaskHeading" class="section-title">Add New Task</h2>
+        <form id="createTaskForm" novalidate>
+          <div class="form-group">
+            <label for="taskTitleInput" class="form-label">
+              Task Title <span class="required" aria-hidden="true">*</span>
+            </label>
+            <input
+              type="text"
+              id="taskTitleInput"
+              name="title"
+              class="form-input"
+              placeholder="e.g., Review project proposal"
+              maxlength="120"
+              required
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="taskDescInput" class="form-label">Description (optional)</label>
+            <textarea
+              id="taskDescInput"
+              name="description"
+              class="form-textarea"
+              rows="3"
+              placeholder="Add extra context, steps, or notes..."
+              maxlength="1000"
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="addTaskBtn" class="btn btn-primary">
+              <span class="btn-text">Add Task</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Task Overview & Filter Section -->
+      <section class="card list-section" aria-labelledby="tasksOverviewHeading">
+        <div class="overview-header">
+          <h2 id="tasksOverviewHeading" class="section-title">Tasks Overview</h2>
+          <!-- Filter Controls -->
+          <nav class="filter-group" role="group" aria-label="Filter tasks by completion status">
+            <button type="button" class="filter-btn active" data-filter="all">All</button>
+            <button type="button" class="filter-btn" data-filter="pending">Pending</button>
+            <button type="button" class="filter-btn" data-filter="completed">Completed</button>
+          </nav>
+        </div>
+
+        <!-- UI State: Loading Indicator -->
+        <div id="loadingIndicator" class="state-container hidden" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="state-text">Loading your tasks...</p>
+        </div>
+
+        <!-- UI State: Empty All Tasks -->
+        <div id="emptyState" class="state-container hidden">
+          <div class="state-icon" aria-hidden="true">&#9745;</div>
+          <h3 class="state-title">No tasks yet</h3>
+          <p class="state-text">Create your first task using the form above to begin organizing your work.</p>
+        </div>
+
+        <!-- UI State: Empty Filter Results -->
+        <div id="emptyFilterState" class="state-container hidden">
+          <div class="state-icon" aria-hidden="true">&#9888;</div>
+          <h3 class="state-title">No matching tasks</h3>
+          <p class="state-text">No tasks found matching the selected filter.</p>
+        </div>
+
+        <!-- Task List Container -->
+        <ul id="taskList" class="task-list" aria-label="Tasks list"></ul>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>TaskFlow Lite &mdash; Built with Node.js, Express &amp; SQLite</p>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

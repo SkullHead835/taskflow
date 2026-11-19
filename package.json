@@ -1,0 +1,25 @@
+{
+  "name": "taskflow-lite",
+  "version": "0.1.0",
+  "description": "A beginner-friendly, maintainable, and lightweight task management web application",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "taskflow",
+    "tasks",
+    "express",
+    "sqlite",
+    "zod"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^13.2.0",
+    "express": "^5.3.0",
+    "zod": "^4.6.7"
+  }
+}
