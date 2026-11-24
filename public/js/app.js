@@ -1,5 +1,5 @@
 /**
- * TaskFlow Lite - Client Application
+ * TaskFlow - Client Application
  * Pure Vanilla JavaScript - No external dependencies
  */
 
@@ -40,7 +40,7 @@
   // ==========================================================================
 
   /**
-   * Performs an HTTP request to the TaskFlow Lite API.
+   * Performs an HTTP request to the TaskFlow API.
    *
    * @param {string} endpoint
    * @param {object} [options={}]
@@ -236,6 +236,18 @@
 
     const metaDiv = document.createElement('div');
     metaDiv.className = 'task-meta';
+
+    if (task.category && task.category.name) {
+      const categoryBadge = document.createElement('span');
+      categoryBadge.className = 'category-badge';
+      categoryBadge.textContent = task.category.name;
+      if (task.category.color) {
+        categoryBadge.style.backgroundColor = `${task.category.color}22`;
+        categoryBadge.style.color = task.category.color;
+        categoryBadge.style.borderColor = task.category.color;
+      }
+      metaDiv.appendChild(categoryBadge);
+    }
 
     const statusBadge = document.createElement('span');
     statusBadge.className = `status-badge ${task.completed ? 'completed' : 'pending'}`;
@@ -528,8 +540,43 @@
     }
   }
 
+  // ==========================================================================
+  // Client-Side Routing (Hash-Based)
+  // ==========================================================================
+
+  const VALID_ROUTES = ['all', 'pending', 'completed'];
+
   /**
-   * Handles filter button clicks.
+   * Parses current URL hash route and returns a valid filter name.
+   *
+   * @returns {'all'|'pending'|'completed'}
+   */
+  function getRouteFromHash() {
+    const raw = window.location.hash.replace(/^#\/?/, '').trim().toLowerCase();
+    return VALID_ROUTES.includes(raw) ? raw : 'all';
+  }
+
+  /**
+   * Synchronizes active route with UI filter buttons and reloads tasks.
+   */
+  function handleRoute() {
+    const route = getRouteFromHash();
+
+    if (window.location.hash !== `#/${route}`) {
+      window.location.hash = `#/${route}`;
+    }
+
+    state.currentFilter = route;
+
+    elements.filterButtons.forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.filter === route);
+    });
+
+    loadTasks();
+  }
+
+  /**
+   * Handles filter button clicks by navigating hash route.
    *
    * @param {Event} e
    */
@@ -538,15 +585,9 @@
     if (!target) return;
 
     const filter = target.dataset.filter;
-    if (filter === state.currentFilter) return;
-
-    state.currentFilter = filter;
-
-    elements.filterButtons.forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.filter === filter);
-    });
-
-    loadTasks();
+    if (filter && VALID_ROUTES.includes(filter)) {
+      window.location.hash = `#/${filter}`;
+    }
   }
 
   // ==========================================================================
@@ -561,8 +602,11 @@
 
     elements.notificationCloseBtn.addEventListener('click', hideNotification);
 
-    // Initial load
-    loadTasks();
+    // Client-side router: listen for hash changes (back/forward navigation)
+    window.addEventListener('hashchange', handleRoute);
+
+    // Initial route handling
+    handleRoute();
   }
 
   // Boot on DOM ready

@@ -8,11 +8,22 @@ const { getDatabase } = require('../config/database');
  */
 function formatTask(row) {
   if (!row) return null;
+  const categoryId =
+    row.category_id !== undefined && row.category_id !== null ? Number(row.category_id) : null;
+
   return {
     id: row.id,
     title: row.title,
     description: row.description,
     completed: Boolean(row.completed),
+    category_id: categoryId,
+    category: row.category_name
+      ? {
+          id: categoryId,
+          name: row.category_name,
+          color: row.category_color
+        }
+      : null,
     created_at: row.created_at,
     updated_at: row.updated_at
   };
@@ -49,6 +60,7 @@ class TaskRepository {
    * @param {string} data.title
    * @param {string} [data.description]
    * @param {boolean|number} [data.completed=false]
+   * @param {number|null} [data.category_id=null]
    * @returns {object} Created task
    * @throws {Error} If title is missing or invalid
    */
@@ -62,23 +74,28 @@ class TaskRepository {
     }
 
     const title = data.title.trim();
-    const description = data.description !== undefined && data.description !== null
-      ? String(data.description).trim()
-      : null;
+    const description =
+      data.description !== undefined && data.description !== null
+        ? String(data.description).trim()
+        : null;
     const completed = data.completed ? 1 : 0;
+    const categoryId =
+      data.category_id !== undefined && data.category_id !== null && data.category_id !== ''
+        ? Number(data.category_id)
+        : null;
     const now = new Date().toISOString();
 
     const stmt = this.db.prepare(`
-      INSERT INTO tasks (title, description, completed, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO tasks (title, description, completed, category_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
-    const result = stmt.run(title, description, completed, now, now);
+    const result = stmt.run(title, description, completed, categoryId, now, now);
     return this.getTaskById(result.lastInsertRowid);
   }
 
   /**
-   * Retrieves a task by its unique ID.
+   * Retrieves a task by its unique ID with category details via LEFT JOIN.
    *
    * @param {number|string} id
    * @returns {object|null} Found task or null
@@ -90,9 +107,13 @@ class TaskRepository {
     }
 
     const stmt = this.db.prepare(`
-      SELECT id, title, description, completed, created_at, updated_at
-      FROM tasks
-      WHERE id = ?
+      SELECT
+        t.id, t.title, t.description, t.completed, t.category_id,
+        t.created_at, t.updated_at,
+        c.name AS category_name, c.color AS category_color
+      FROM tasks t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.id = ?
     `);
 
     const row = stmt.get(numericId);
@@ -100,13 +121,17 @@ class TaskRepository {
   }
 
   /**
-   * Retrieves all tasks matching the specified filters.
+   * Retrieves all tasks matching the specified filters via LEFT JOIN with categories.
    *
    * @param {object} [filters={}]
    * @param {boolean|number|string} [filters.completed]
+   * @param {number|string} [filters.category_id]
    * @returns {Array<object>} Array of task objects
    */
   getAllTasks(filters = {}) {
+    const whereClauses = [];
+    const params = [];
+
     if (filters && filters.completed !== undefined) {
       let filterCompleted = null;
 
@@ -119,24 +144,38 @@ class TaskRepository {
       }
 
       if (filterCompleted !== null) {
-        const stmt = this.db.prepare(`
-          SELECT id, title, description, completed, created_at, updated_at
-          FROM tasks
-          WHERE completed = ?
-          ORDER BY id ASC
-        `);
-        const rows = stmt.all(filterCompleted);
-        return rows.map(formatTask);
+        whereClauses.push('t.completed = ?');
+        params.push(filterCompleted);
       }
     }
 
-    const stmt = this.db.prepare(`
-      SELECT id, title, description, completed, created_at, updated_at
-      FROM tasks
-      ORDER BY id ASC
-    `);
+    if (
+      filters &&
+      filters.category_id !== undefined &&
+      filters.category_id !== null &&
+      filters.category_id !== ''
+    ) {
+      const catId = Number(filters.category_id);
+      if (Number.isInteger(catId) && catId > 0) {
+        whereClauses.push('t.category_id = ?');
+        params.push(catId);
+      }
+    }
 
-    const rows = stmt.all();
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    const sql = `
+      SELECT
+        t.id, t.title, t.description, t.completed, t.category_id,
+        t.created_at, t.updated_at,
+        c.name AS category_name, c.color AS category_color
+      FROM tasks t
+      LEFT JOIN categories c ON t.category_id = c.id
+      ${whereSql}
+      ORDER BY t.id ASC
+    `;
+
+    const stmt = this.db.prepare(sql);
+    const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
     return rows.map(formatTask);
   }
 
@@ -168,22 +207,70 @@ class TaskRepository {
     }
 
     const title = data.title !== undefined ? data.title.trim() : existing.title;
-    const description = data.description !== undefined
-      ? (data.description === null ? null : String(data.description).trim())
-      : existing.description;
-    const completed = data.completed !== undefined
-      ? (data.completed ? 1 : 0)
-      : (existing.completed ? 1 : 0);
+    const description =
+      data.description !== undefined
+        ? data.description === null
+          ? null
+          : String(data.description).trim()
+        : existing.description;
+    const completed =
+      data.completed !== undefined
+        ? data.completed
+          ? 1
+          : 0
+        : existing.completed
+        ? 1
+        : 0;
+    const categoryId =
+      data.category_id !== undefined
+        ? data.category_id === null || data.category_id === ''
+          ? null
+          : Number(data.category_id)
+        : existing.category_id;
     const updatedAt = new Date().toISOString();
 
     const stmt = this.db.prepare(`
       UPDATE tasks
-      SET title = ?, description = ?, completed = ?, updated_at = ?
+      SET title = ?, description = ?, completed = ?, category_id = ?, updated_at = ?
       WHERE id = ?
     `);
 
-    stmt.run(title, description, completed, updatedAt, numericId);
+    stmt.run(title, description, completed, categoryId, updatedAt, numericId);
     return this.getTaskById(numericId);
+  }
+
+  /**
+   * Retrieves all available categories.
+   *
+   * @returns {Array<object>}
+   */
+  getAllCategories() {
+    const stmt = this.db.prepare(`
+      SELECT id, name, color, created_at
+      FROM categories
+      ORDER BY id ASC
+    `);
+    return stmt.all();
+  }
+
+  /**
+   * Retrieves a category by ID.
+   *
+   * @param {number|string} id
+   * @returns {object|null}
+   */
+  getCategoryById(id) {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      return null;
+    }
+
+    const stmt = this.db.prepare(`
+      SELECT id, name, color, created_at
+      FROM categories
+      WHERE id = ?
+    `);
+    return stmt.get(numericId) || null;
   }
 
   /**

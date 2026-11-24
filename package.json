@@ -1,12 +1,13 @@
 {
-  "name": "taskflow-lite",
+  "name": "taskflow",
   "version": "0.1.0",
-  "description": "A beginner-friendly, maintainable, and lightweight task management web application",
+  "description": "A clean, maintainable, and lightweight task management web application",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage"
   },
   "keywords": [
     "taskflow",

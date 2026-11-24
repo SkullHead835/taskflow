@@ -1,37 +1,41 @@
-# Low-Level Design (LLD) - TaskFlow Lite
+# Low-Level Design (LLD) - TaskFlow
 
 ## 1. Module Responsibilities
 
-The codebase follows the Controller-Service-Repository pattern with centralized schema validation, error handling, and a Vanilla JS frontend:
+The codebase follows the Controller-Service-Repository pattern with centralized schema validation, error handling, rate limiting, and a Vanilla JS frontend:
 
 ```
 src/
 ├── config/
-│   └── database.js            # [Implemented] SQLite connection, safety pragmas, table DDL, WAL mode
+│   ├── database.js            # [Implemented] SQLite connection, safety pragmas, table DDL, migrations
+│   └── env.js                 # [Implemented] Centralized environment configuration and native .env loader
 ├── repositories/
-│   └── taskRepository.js      # [Implemented] Parameterized SQL prepared statements, entity mapping
+│   └── taskRepository.js      # [Implemented] Parameterized SQL prepared statements, relational LEFT JOINs
 ├── services/
-│   └── taskService.js         # [Implemented] Business rules, domain validation, repository orchestration
+│   └── taskService.js         # [Implemented] Business rules, domain validation, category validation
+├── utils/
+│   └── sanitize.js            # [Implemented] Server-side HTML/script injection sanitizer
 ├── errors/
 │   └── appError.js            # [Implemented] Typed application domain errors (AppError, BadRequestError, NotFoundError)
 ├── validators/
 │   └── taskSchemas.js         # [Implemented] Zod schemas for request body, query, and params
 ├── middleware/
+│   ├── security.js            # [Implemented] Security headers (CSP, nosniff) and sliding-window rate limiting
 │   ├── validateRequest.js     # [Implemented] Express validation middleware (compatible with Express 5)
 │   └── errorHandler.js        # [Implemented] Centralized error handler and 404 route handler
 ├── controllers/
 │   └── taskController.js      # [Implemented] HTTP request handling and standard JSON responses
 ├── routes/
-│   └── taskRoutes.js          # [Implemented] Express task route declarations
+│   └── taskRoutes.js          # [Implemented] Express task and category route declarations
 ├── app.js                     # [Implemented] Express app factory and middleware configuration
 └── server.js                  # [Implemented] Server entrypoint, port binding, and graceful shutdown
 
 public/
 ├── index.html                 # [Implemented] Semantic HTML5 dashboard layout
 ├── css/
-│   └── styles.css             # [Implemented] Pure Vanilla CSS styling (responsive, accessible)
+│   └── styles.css             # [Implemented] Pure Vanilla CSS styling (responsive, category badges)
 └── js/
-    └── app.js                 # [Implemented] Client application, safe DOM operations, API integration
+    └── app.js                 # [Implemented] Client app, safe DOM operations, hash router, API integration
 ```
 
 ---

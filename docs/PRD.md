@@ -1,7 +1,7 @@
-# Product Requirements Document (PRD) - TaskFlow Lite
+# Product Requirements Document (PRD) - TaskFlow
 
 ## 1. Project Overview
-**TaskFlow Lite** is a minimal, lightweight, beginner-friendly task management web application. It provides users with a clean, distraction-free interface to create, review, update, complete, and delete tasks. The application is built using a simple, dependable technology stack: Node.js, Express.js, SQLite via `better-sqlite3`, Vanilla JavaScript, CSS, and HTML, validated via Zod and tested using Node's native test runner (`node --test`).
+**TaskFlow** is a clean, maintainable task management web application. It provides users with a distraction-free interface to create, review, update, complete, categorize, and delete tasks. The application is built using a reliable technology stack: Node.js, Express.js, SQLite via `better-sqlite3`, Vanilla JavaScript, CSS, and HTML, validated via Zod, sanitized against script injection, and tested using Node's native test runner (`node --test`).
 
 ---
 
@@ -48,14 +48,24 @@ Many task management systems are overly complex, difficult to maintain, and weig
 
 ## 6. Data Model
 
-The data layer uses a single SQLite table: **`tasks`**
+The data layer uses normalized SQLite tables with foreign key constraints:
 
+### 6.1 Table: `categories`
+| Field | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Unique category identifier |
+| `name` | TEXT | NOT NULL UNIQUE | Category name (e.g., Work, Personal, Urgent) |
+| `color` | TEXT | NOT NULL DEFAULT '#6366f1' | Hex color code for UI badges |
+| `created_at` | TEXT | NOT NULL DEFAULT (DATETIME('now')) | Creation timestamp |
+
+### 6.2 Table: `tasks`
 | Field | Type | Constraints | Description |
 |---|---|---|---|
 | `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Unique task identifier |
-| `title` | TEXT | NOT NULL | Task title (non-empty string) |
-| `description` | TEXT | NULLABLE | Optional details |
+| `title` | TEXT | NOT NULL | Task title (non-empty string, max 120 chars) |
+| `description` | TEXT | NULLABLE | Optional details (max 1000 chars) |
 | `completed` | INTEGER | NOT NULL DEFAULT 0 CHECK(completed IN (0, 1)) | Status (0 = pending/active, 1 = completed; mapped to boolean in JS) |
+| `category_id` | INTEGER | NULLABLE REFERENCES categories(id) ON DELETE SET NULL | Normalized foreign key referencing categories table |
 | `created_at` | TEXT | NOT NULL DEFAULT (DATETIME('now')) | Timestamp of creation (ISO 8601 string via app, SQLite DATETIME fallback) |
 | `updated_at` | TEXT | NOT NULL DEFAULT (DATETIME('now')) | Timestamp of last update (ISO 8601 string via app, SQLite DATETIME fallback) |
 

@@ -31,6 +31,9 @@ function createTaskRouter(taskController = new TaskController()) {
     taskController.getAllTasks
   );
 
+  // GET /api/tasks/categories - List all categories
+  router.get('/categories', taskController.getAllCategories);
+
   // GET /api/tasks/:id - Retrieve single task by ID
   router.get(
     '/:id',

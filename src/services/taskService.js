@@ -1,5 +1,6 @@
 const TaskRepository = require('../repositories/taskRepository');
 const { BadRequestError } = require('../errors/appError');
+const { sanitizeString } = require('../utils/sanitize');
 
 /**
  * Service managing business logic and domain rules for Tasks.
@@ -44,27 +45,45 @@ class TaskService {
     }
 
     const trimmedTitle = data.title.trim();
-    if (trimmedTitle.length > 120) {
+    const sanitizedTitle = sanitizeString(trimmedTitle);
+    if (!sanitizedTitle) {
+      throw new BadRequestError('Task title cannot be empty or contain only HTML tags');
+    }
+    if (sanitizedTitle.length > 120) {
       throw new BadRequestError('Task title must not exceed 120 characters');
     }
 
     let sanitizedDescription = null;
     if (data.description !== undefined && data.description !== null) {
-      const trimmedDesc = String(data.description).trim();
-      if (trimmedDesc.length > 1000) {
+      const cleaned = sanitizeString(String(data.description));
+      if (cleaned.length > 1000) {
         throw new BadRequestError('Task description must not exceed 1000 characters');
       }
-      sanitizedDescription = trimmedDesc;
+      sanitizedDescription = cleaned.length > 0 ? cleaned : null;
     }
 
     if (data.completed !== undefined && typeof data.completed !== 'boolean') {
       throw new BadRequestError('Completed status must be a boolean');
     }
 
+    let categoryId = null;
+    if (data.category_id !== undefined && data.category_id !== null && data.category_id !== '') {
+      const numCatId = Number(data.category_id);
+      if (!Number.isInteger(numCatId) || numCatId <= 0) {
+        throw new BadRequestError('Category ID must be a positive integer');
+      }
+      const cat = this.repository.getCategoryById(numCatId);
+      if (!cat) {
+        throw new BadRequestError('Category not found');
+      }
+      categoryId = numCatId;
+    }
+
     const sanitizedData = {
-      title: trimmedTitle,
+      title: sanitizedTitle,
       description: sanitizedDescription,
-      completed: Boolean(data.completed)
+      completed: Boolean(data.completed),
+      category_id: categoryId
     };
 
     return this.repository.createTask(sanitizedData);
@@ -126,29 +145,13 @@ class TaskService {
       throw new BadRequestError('Update payload must be an object');
     }
 
-    const editableFields = ['title', 'description', 'completed'];
+    const editableFields = ['title', 'description', 'completed', 'category_id'];
     const hasEditableField = editableFields.some((field) => data[field] !== undefined);
 
     if (!hasEditableField) {
       throw new BadRequestError(
-        'Update payload must contain at least one editable field: title, description, or completed'
+        'Update payload must contain at least one editable field: title, description, completed, or category_id'
       );
-    }
-
-    if (data.title !== undefined) {
-      if (typeof data.title !== 'string' || data.title.trim() === '') {
-        throw new BadRequestError('Task title cannot be empty');
-      }
-      if (data.title.trim().length > 120) {
-        throw new BadRequestError('Task title must not exceed 120 characters');
-      }
-    }
-
-    if (data.description !== undefined && data.description !== null) {
-      const trimmedDesc = String(data.description).trim();
-      if (trimmedDesc.length > 1000) {
-        throw new BadRequestError('Task description must not exceed 1000 characters');
-      }
     }
 
     if (data.completed !== undefined && typeof data.completed !== 'boolean') {
@@ -161,18 +164,75 @@ class TaskService {
     }
 
     const sanitizedData = {};
+
     if (data.title !== undefined) {
-      sanitizedData.title = data.title.trim();
+      if (typeof data.title !== 'string' || data.title.trim() === '') {
+        throw new BadRequestError('Task title cannot be empty');
+      }
+      const sanitized = sanitizeString(data.title);
+      if (!sanitized) {
+        throw new BadRequestError('Task title cannot be empty or contain only HTML tags');
+      }
+      if (sanitized.length > 120) {
+        throw new BadRequestError('Task title must not exceed 120 characters');
+      }
+      sanitizedData.title = sanitized;
     }
+
     if (data.description !== undefined) {
-      sanitizedData.description =
-        data.description === null ? null : String(data.description).trim();
+      if (data.description === null) {
+        sanitizedData.description = null;
+      } else {
+        const cleaned = sanitizeString(String(data.description));
+        if (cleaned.length > 1000) {
+          throw new BadRequestError('Task description must not exceed 1000 characters');
+        }
+        sanitizedData.description = cleaned.length > 0 ? cleaned : null;
+      }
     }
     if (data.completed !== undefined) {
       sanitizedData.completed = data.completed;
     }
+    if (data.category_id !== undefined) {
+      if (data.category_id === null || data.category_id === '') {
+        sanitizedData.category_id = null;
+      } else {
+        const numCatId = Number(data.category_id);
+        if (!Number.isInteger(numCatId) || numCatId <= 0) {
+          throw new BadRequestError('Category ID must be a positive integer');
+        }
+        const cat = this.repository.getCategoryById(numCatId);
+        if (!cat) {
+          throw new BadRequestError('Category not found');
+        }
+        sanitizedData.category_id = numCatId;
+      }
+    }
 
     return this.repository.updateTask(numericId, sanitizedData);
+  }
+
+  /**
+   * Retrieves all task categories.
+   *
+   * @returns {Array<object>}
+   */
+  getAllCategories() {
+    return this.repository.getAllCategories();
+  }
+
+  /**
+   * Retrieves a category by ID.
+   *
+   * @param {number|string} id
+   * @returns {object|null}
+   */
+  getCategoryById(id) {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      throw new BadRequestError('Category ID must be a positive integer');
+    }
+    return this.repository.getCategoryById(numericId);
   }
 
   /**

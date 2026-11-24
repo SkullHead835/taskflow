@@ -1,31 +1,35 @@
-# High-Level Design (HLD) - TaskFlow Lite
+# High-Level Design (HLD) - TaskFlow
 
 ## 1. System Architecture
 
-TaskFlow Lite adheres to a clean, layered monolithic architecture executing within a single Node.js runtime process.
+TaskFlow adheres to a clean, layered monolithic architecture executing within a single Node.js runtime process.
 
 ```mermaid
 flowchart TD
-    subgraph Client["Client Tier (Browser - Implemented Stage 4)"]
+    subgraph Client["Client Tier (Browser - Vanilla JS)"]
         UI["HTML5 / CSS3 / Vanilla JavaScript (public/)"]
+        RouterClient["Hash-Based Client Router (public/js/app.js)"]
         ApiClient["REST Client (Fetch API - public/js/app.js)"]
-        UI <--> ApiClient
+        UI <--> RouterClient
+        RouterClient <--> ApiClient
     end
 
-    subgraph Server["Application Tier (Node.js & Express - Implemented Stage 3)"]
+    subgraph Server["Application Tier (Node.js & Express)"]
         Router["Express Router & Static Server (src/app.js, src/routes/)"]
+        SecMW["Security & Rate Limiting Middleware (src/middleware/security.js)"]
         Val["Validation Middleware (src/middleware/validateRequest.js)"]
         Ctrl["Controllers Layer (src/controllers/taskController.js)"]
         Svc["Services Layer (src/services/taskService.js)"]
         Repo["Repositories Layer (src/repositories/taskRepository.js)"]
 
-        Router --> Val
+        Router --> SecMW
+        SecMW --> Val
         Val --> Ctrl
         Ctrl --> Svc
         Svc --> Repo
     end
 
-    subgraph Storage["Data Tier (Implemented Stage 1)"]
+    subgraph Storage["Data Tier (Normalized SQLite)"]
         DB[(SQLite Embedded Database)]
         Repo <--> DB
     end

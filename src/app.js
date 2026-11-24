@@ -3,6 +3,8 @@ const path = require('path');
 const { createTaskRouter } = require('./routes/taskRoutes');
 const TaskController = require('./controllers/taskController');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { securityHeaders, createRateLimiter } = require('./middleware/security');
+const { config } = require('./config/env');
 
 /**
  * Factory function creating and configuring an Express application instance.
@@ -15,10 +17,17 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 function createApp(options = {}) {
   const app = express();
 
-  // 1. Parse JSON request bodies
+  // 1. Security Headers
+  app.use(securityHeaders);
+
+  // 2. Rate Limiting on API endpoints
+  const rateLimitOptions = options.rateLimit !== undefined ? options.rateLimit : config.rateLimit;
+  app.use('/api/', createRateLimiter(rateLimitOptions));
+
+  // 3. Parse JSON request bodies
   app.use(express.json());
 
-  // 2. Serve static frontend assets from public directory
+  // 4. Serve static frontend assets from public directory
   app.use(express.static(path.join(__dirname, '../public')));
 
   // 3. Health check endpoint (GET /api/health)
@@ -27,7 +36,7 @@ function createApp(options = {}) {
       success: true,
       data: {
         status: 'healthy',
-        service: 'TaskFlow Lite'
+        service: 'TaskFlow'
       }
     });
   });
@@ -37,6 +46,7 @@ function createApp(options = {}) {
     ? new TaskController(options.taskService)
     : new TaskController();
 
+  app.get('/api/categories', taskController.getAllCategories);
   app.use('/api/tasks', createTaskRouter(taskController));
 
   // 5. Catch-all 404 handler for unknown routes

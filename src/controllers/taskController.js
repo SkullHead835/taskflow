@@ -17,6 +17,7 @@ class TaskController {
     this.getTaskById = this.getTaskById.bind(this);
     this.updateTask = this.updateTask.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
+    this.getAllCategories = this.getAllCategories.bind(this);
   }
 
   /**
@@ -133,6 +134,21 @@ class TaskController {
         data: {
           message: 'Task deleted successfully'
         }
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  /**
+   * GET /api/categories - Retrieves all task categories.
+   */
+  async getAllCategories(req, res, next) {
+    try {
+      const categories = this.taskService.getAllCategories();
+      return res.status(200).json({
+        success: true,
+        data: categories
       });
     } catch (err) {
       return next(err);

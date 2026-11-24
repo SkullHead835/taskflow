@@ -1,10 +1,11 @@
 const app = require('./app');
 const { getDatabase, closeDatabase } = require('./config/database');
+const { config } = require('./config/env');
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = config.port;
 
 /**
- * Starts the TaskFlow Lite HTTP server.
+ * Starts the TaskFlow HTTP server.
  *
  * @param {number} [port=PORT]
  * @returns {import('http').Server}
@@ -14,7 +15,7 @@ function startServer(port = PORT) {
   const db = getDatabase();
 
   const server = app.listen(port, () => {
-    console.log(`TaskFlow Lite server running on http://localhost:${port}`);
+    console.log(`TaskFlow server running on http://localhost:${port}`);
   });
 
   // Graceful shutdown handlers

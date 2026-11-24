@@ -1,4 +1,4 @@
-# TaskFlow Lite
+# TaskFlow
 
 A clean, beginner-friendly, and maintainable task management web application built with Node.js, Express, SQLite, and Vanilla JavaScript.
 
@@ -6,7 +6,7 @@ A clean, beginner-friendly, and maintainable task management web application bui
 
 ## 1. Project Introduction
 
-**TaskFlow Lite** provides a straightforward, lightweight task tracking experience with zero build-tool friction. It demonstrates clean architectural principles (Repository -> Service -> Controller -> Routes -> Vanilla UI) using standard, stable web technologies.
+**TaskFlow** provides a straightforward, lightweight task tracking experience with zero build-tool friction. It demonstrates clean architectural principles (Repository -> Service -> Controller -> Routes -> Vanilla UI) using standard, stable web technologies.
 
 ---
 
@@ -15,14 +15,16 @@ A clean, beginner-friendly, and maintainable task management web application bui
 | Component | Status | Details |
 |---|---|---|
 | Project Structure & Config |  **Implemented** | Scaffolding, `package.json`, `.gitignore` |
+| Environment Configuration |  **Implemented** | Centralized config (`src/config/env.js`), `.env.example`, native env loader |
 | System Documentation |  **Implemented** | Aligned PRD, HLD, and LLD in `docs/` |
-| Database Layer (`src/config/database.js`) |  **Implemented** | SQLite (`better-sqlite3`), safety pragmas, auto-migration |
-| Data Repository (`src/repositories/taskRepository.js`) |  **Implemented** | Parameterized SQL prepared statements, entity mapping |
-| Business Logic (`src/services/taskService.js`) |  **Implemented** | Domain rules, input sanitization, empty update guards |
-| Input Validation (`src/validators/`, `src/middleware/`) |  **Implemented** | Zod schemas and Express 5 compatible validation middleware |
-| REST API Routes & Controllers (`src/routes/`, `src/controllers/`) |  **Implemented** | Endpoints for task CRUD and health status |
-| Express Application & Server (`src/app.js`, `src/server.js`) |  **Implemented** | App factory, error handling, graceful shutdown |
-| Automated Test Suites (`tests/`) |  **Implemented** | 66 automated tests across 9 test suites |
+| Database Layer (`src/config/database.js`) |  **Implemented** | Normalized SQLite tables (`tasks`, `categories`), foreign keys, auto-migration, seed data |
+| Data Repository (`src/repositories/taskRepository.js`) |  **Implemented** | Parameterized SQL prepared statements, relational `LEFT JOIN` queries, entity mapping |
+| Business Logic (`src/services/taskService.js`) |  **Implemented** | Domain rules, server-side input sanitization, category validation |
+| Input Validation & Sanitization |  **Implemented** | Zod schemas, HTML/script stripping utility (`src/utils/sanitize.js`), Express 5 validation |
+| Security & Rate Limiting |  **Implemented** | Standard security headers (CSP, X-Frame, nosniff) and sliding-window API rate limiting (`429`) |
+| REST API Routes & Controllers |  **Implemented** | Endpoints for tasks CRUD, category listing, and health status |
+| Client-Side Routing |  **Implemented** | Hash-based routing (`/#/all`, `/#/pending`, `/#/completed`) with back/forward history navigation |
+| Automated Test Suites (`tests/`) |  **Implemented** | 85 automated tests across 13 test suites with >90% line coverage |
 | Web UI (`public/`) |  **Implemented** | Responsive HTML5, CSS3, and Vanilla JavaScript frontend |
 
 ---
@@ -120,3 +122,9 @@ The static frontend files (`index.html`, `styles.css`, `app.js`) are served dire
 npm test
 ```
 Executes all unit, schema, and API integration test suites using the Node.js native test runner.
+
+### Code Coverage Report
+```bash
+npm run test:coverage
+```
+Generates a full line, branch, and function coverage report via Node.js native test runner.

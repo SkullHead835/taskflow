@@ -6,7 +6,7 @@ const TaskService = require('../src/services/taskService');
 const { createApp } = require('../src/app');
 const { BadRequestError } = require('../src/errors/appError');
 
-describe('TaskFlow Lite REST API Integration', () => {
+describe('TaskFlow REST API Integration', () => {
   let db;
   let repo;
   let service;
@@ -53,7 +53,7 @@ describe('TaskFlow Lite REST API Integration', () => {
     const json = await res.json();
     assert.strictEqual(json.success, true);
     assert.strictEqual(json.data.status, 'healthy');
-    assert.strictEqual(json.data.service, 'TaskFlow Lite');
+    assert.strictEqual(json.data.service, 'TaskFlow');
   });
 
   // 2. POST creates a valid task

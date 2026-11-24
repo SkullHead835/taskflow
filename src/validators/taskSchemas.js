@@ -20,6 +20,12 @@ const createTaskSchema = z.object({
     .nullable(),
   completed: z
     .boolean({ invalid_type_error: 'Completed must be a boolean' })
+    .optional(),
+  category_id: z.coerce
+    .number({ invalid_type_error: 'Category ID must be a number' })
+    .int('Category ID must be an integer')
+    .positive('Category ID must be a positive integer')
+    .nullable()
     .optional()
 });
 
@@ -44,15 +50,22 @@ const updateTaskSchema = z
       .nullable(),
     completed: z
       .boolean({ invalid_type_error: 'Completed must be a boolean' })
+      .optional(),
+    category_id: z.coerce
+      .number({ invalid_type_error: 'Category ID must be a number' })
+      .int('Category ID must be an integer')
+      .positive('Category ID must be a positive integer')
+      .nullable()
       .optional()
   })
   .refine(
     (data) =>
       data.title !== undefined ||
       data.description !== undefined ||
-      data.completed !== undefined,
+      data.completed !== undefined ||
+      data.category_id !== undefined,
     {
-      message: 'Update request must contain at least one valid editable field (title, description, completed)'
+      message: 'Update request must contain at least one valid editable field (title, description, completed, category_id)'
     }
   );
 
@@ -66,6 +79,11 @@ const filterTasksSchema = z.object({
       z.boolean(),
       z.enum(['true', 'false', '1', '0']).transform((val) => val === 'true' || val === '1')
     ])
+    .optional(),
+  category_id: z.coerce
+    .number({ invalid_type_error: 'Category ID must be a number' })
+    .int('Category ID must be an integer')
+    .positive('Category ID must be a positive integer')
     .optional()
 });
 
